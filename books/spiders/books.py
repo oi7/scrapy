@@ -4,27 +4,21 @@ import scrapy
 
 class BooksSpider(scrapy.Spider):
     name = "books"
-    allowed_domains = ["books.toscrape.com"]
+    allowed_domains = ["angel.co/space-travel"]
     start_urls = [
-        'http://books.toscrape.com/',
+        'https://angel.co/space-travel',
     ]
 
     def parse(self, response):
-        for book_url in response.css("article.product_pod > h3 > a ::attr(href)").extract():
+        for book_url in response.css("div.results_holder > div.with_data.dts27.frs86._a._jm > div:first-of-type > div:first-of-type > div:first-of-type > div:first-of-type > div.text > div.name > a ::attr(href)").extract():
             yield scrapy.Request(response.urljoin(book_url), callback=self.parse_book_page)
-        next_page = response.css("li.next > a ::attr(href)").extract_first()
+        next_page = response.css("div.results_holder > div.with_data.dts27.frs86._a._jm > div.next > div:first-of-type > div:first-of-type > div:first-of-type > div.text > div.name > a ::attr(href)").extract_first()
         if next_page:
             yield scrapy.Request(response.urljoin(next_page), callback=self.parse)
 
     def parse_book_page(self, response):
         item = {}
-        product = response.css("div.product_main")
-        item["title"] = product.css("h1 ::text").extract_first()
-        item['category'] = response.xpath(
-            "//ul[@class='breadcrumb']/li[@class='active']/preceding-sibling::li[1]/a/text()"
-        ).extract_first()
-        item['description'] = response.xpath(
-            "//div[@id='product_description']/following-sibling::p/text()"
-        ).extract_first()
-        item['price'] = response.css('p.price_color ::text').extract_first()
+        section1 = response.css("section.component_21156")
+        item["name"] = section1.css("h1 ::text").extract_first()
+        item['domain'] = response.css("li.websiteLink_b71b4 > a ::attr(href)").extract_first()
         yield item
